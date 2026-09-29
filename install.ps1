@@ -7,7 +7,7 @@
 
   两种通道:
     dsh    复制 DSH\aipj-1.0\ → %USERPROFILE%\.dsh\.agent-presets\aipj-1\
-           （DeepSeek Harness 在启动时扫描该目录；装完必须重启 DSH 进程）
+           （DeepSeek Harness 实时扫描该目录，见 dsh-agent-presets/src/index.ts:96；新开会话即生效）
            ⚠ 落地目录名必须是 aipj-1（不能是 aipj-1.0）——见下方 PRESET_ID 说明
     codex  复制 CODEX\ai-pj-v1.0-codex.md → %USERPROFILE%\.codex\AGENTS.md
            （Codex 官方全局指令文件；改前自动备份）
@@ -186,7 +186,8 @@ function Install-Dsh {
   } else {
     Bad '写入后校验失败，请检查编码或权限'
   }
-  Wr "必须【完全退出 DSH 进程再重开】（关窗口不算），否则预设不会被扫描到"
+  Wr "DSH 侧：新开一个会话（或直接完全退出进程重开）后，在预设选择器里选中它才生效"
+  Wr "  依据 dsh-agent-presets/src/index.ts:96 —— 预设列表实时扫盘，但已建立的会话不会中途换系统提示词"
   Wr ("重启后：新建会话 → 预设选择器选「{0}」→ 发 hi 验证" -f (Get-PresetDisplayName))
   Wr ("目录 id 必须是 {0}：DSH 规则 PRESET_ID = {1}，带小数点/大写/下划线的名字会被静默忽略" -f $PresetId, $PresetIdRule)
 }

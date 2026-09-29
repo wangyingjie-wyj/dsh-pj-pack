@@ -144,11 +144,16 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action install -Target c
 > ② 目录名直接沿用 `aipj-1.0`——带小数点违反 `PRESET_ID`，必须改成 `aipj-1`。
 > 这两条 `install.ps1 -Action check` 都会检测并提醒。
 
-### 第 3 步：完全重启客户端 → 新建会话 → 验证
+### 第 3 步：新建会话 → 选中预设 → 验证
 
-- **必须完全退出进程再重开**（关窗口不算，托盘里退干净 / 任务管理器结束 DSH 进程），预设只在启动时扫描。
+机制说明（已核对源码，别被"必须重启"的说法唬住）：
+
+- **预设列表是实时扫盘的**：`dsh-agent-presets/src/index.ts:96` 明确写着 *Discovery is unmemoized: `list()` and `resolve()` re-read the roots on every call so a preset authored while the process runs is visible immediately* —— 所以文件放进去后，**新开一个会话 / 重开预设选择器**就能看到它，不必先重启。
+- **但已经建立的会话不会中途换系统提示词**：协议是在会话建立时装配进 system 的。所以"新开会话"这一步不能省。
+- **稳妥做法**：完全退出进程再重开（关窗口不算，托盘退干净 / 任务管理器结束 DSH 进程），然后新建会话。拿不准就走这条，一定对。
+
 - DSH：新建会话 → 在**预设选择器**里选 **「AI-PJ v1.0」** → 发送 `hi`
-- Codex：新开会话 → 发送 `hi`
+- Codex：新开会话 → 发送 `hi`（Codex 的 `AGENTS.md` 是会话建立时读取的，这条**必须新会话**）
 
 收到回复 **`AI-PJ v1.0 已就绪`** = 协议已激活 ✅
 
@@ -231,6 +236,18 @@ DSH 只认 `/^[a-z0-9][a-z0-9-]*$/`：小写字母、数字、连字符，首字
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action join
 # 合并出 extra\DSH-Setup-Latest.exe 并自动比对 SHA256，一致才提示"完整"
 ```
+
+**机器上没有 7z / WinRAR，怎么解开 `packages/` 里的 rar？**
+Win10/11 自带 `tar.exe`（bsdtar）能直接解 RAR，不用装任何东西：
+
+```powershell
+mkdir C:\tmp\unpack
+tar -xf ".\packages\DSH-preset-aipj-1.0.rar" -C C:\tmp\unpack
+```
+
+**为什么 DSH 装完可以少重启一次？**
+预设**列表**是实时扫盘的（源码 `dsh-agent-presets/src/index.ts:96` 注释：*Discovery is unmemoized … a preset authored while the process runs is visible immediately*），
+所以文件放进去后新开会话就能看到；但**已建立的会话不会中途更换系统提示词**，"新开会话"这步不能省。
 
 **这个包安全吗？**
 仓库里唯一的二进制是 `extra/` 里那份 **DeepSeek Harness 官方客户端安装包**（分卷存放，可用 SHA256 校验）；
