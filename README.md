@@ -40,6 +40,8 @@ dsh-pj-pack/
 ├── install.ps1                     ← 一键安装/卸载/检查/分卷合并（PS 5.1+）
 ├── 双击安装.bat                    ← 小白入口：双击即装
 ├── 双击卸载.bat                    ← 双击即卸
+├── push-to-github.ps1              ← 一键推送到你自己的 GitHub
+├── 双击推送到GitHub.bat            ← 同上，双击版
 ├── README.md                       ← 本文件
 │
 ├── DSH/
@@ -224,4 +226,6 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action join
 
 ## 附：把整包上传到自己的 GitHub
 
-见 [`docs/上传到GitHub.md`](docs/上传到GitHub.md)（含 HTTPS + Token 与 git LFS 两种走法、以及大文件分卷的原因）。
+最省事：双击 **`双击推送到GitHub.bat`**，按提示填仓库地址 + Personal Access Token，脚本自动自检并推送。
+
+手动做法、网页上传、Git LFS 三种走法（含常见报错表）见 [`docs/上传到GitHub.md`](docs/上传到GitHub.md)。

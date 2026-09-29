@@ -6,7 +6,27 @@
 
 ---
 
-## 走法 1 · HTTPS + Personal Access Token（推荐）
+## 走法 0 · 一键脚本（最省事）
+
+仓库里已带 `push-to-github.ps1`：
+
+1. 先去 <https://github.com/new> 建一个空仓库（不要勾 Add README / .gitignore / license），比如叫 `dsh-pj-pack`；
+2. 去 <https://github.com/settings/tokens> → **Generate new token (classic)** → 勾 `repo` → 复制 token；
+3. 双击 **`双击推送到GitHub.bat`**（或跑 `push-to-github.ps1`），按提示粘贴仓库地址和 token。
+
+脚本会自己完成：自检（>100MB 文件、个人路径/token 残留）→ `git init/add/commit` → 推送。
+加 `-Create` 参数还能顺便用 API 帮你把远端仓库建出来。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\push-to-github.ps1 `
+  -RepoUrl https://github.com/<用户名>/dsh-pj-pack.git -Token <你的token> -Create
+```
+
+**Token 只在本次推送的 URL 里使用，不写进 `.git/config`。**
+
+---
+
+## 走法 1 · 全手动 HTTPS + Personal Access Token
 
 ### 1) 建空仓库
 
