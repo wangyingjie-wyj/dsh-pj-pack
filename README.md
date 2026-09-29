@@ -84,9 +84,12 @@ dsh-pj-pack/
 
 ```powershell
 # 有 git：
-git clone https://github.com/<你的用户名>/dsh-pj-pack.git
+git clone https://github.com/wangyingjie-wyj/dsh-pj-pack.git
 # 没 git：在 GitHub 页面点 Code → Download ZIP，然后解压
 ```
+
+仓库地址：<https://github.com/wangyingjie-wyj/dsh-pj-pack>
+（不上 GitHub 也行：别人把 `dsh-pj-pack` 文件夹直接拷给你、放 U 盘/桌面都能用。）
 
 也可以直接把别人拷给你的 `dsh-pj-pack` 文件夹放在任意位置（U 盘 / 桌面都行）。
 
