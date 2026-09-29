@@ -155,6 +155,10 @@ Get-ChildItem -Recurse -File | Sort-Object Length -Descending |
 Get-FileHash .\DSH\aipj-1.0\persona.md -Algorithm SHA256
 ```
 
+> 注：`DSH\aipj-1.0\` 是**源目录**（原包原名，带小数点仅作归档）；
+> 安装到 `~/.dsh/.agent-presets/` 时必须改名 `aipj-1`，因为 DSH 的 `PRESET_ID = /^[a-z0-9][a-z0-9-]*$/`
+> 不接受小数点——不合规的名字会被静默忽略。
+
 - 本仓库内的路径全部使用 `%USERPROFILE%` 动态解析，不含任何个人绝对路径；
 - 不含任何 token、账号、cookie；
 - `extra/` 里是 DeepSeek Harness **官方客户端安装包**（原样分卷），如不希望分发可删除该目录并在 `.gitignore` 里加 `extra/`。

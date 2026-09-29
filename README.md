@@ -28,8 +28,16 @@ AI 客户端的"人格/协议"不是运行时能自己改的，它是**启动时
 
 | 通道 | 目标客户端 | 放置位置 | 作用 |
 |---|---|---|---|
-| 🟢 **DSH 预设** | DeepSeek Harness（含 DSH 桌面端 / Web GUI） | `%USERPROFILE%\.dsh\.agent-presets\aipj-1.0\` | 新增一个预设，在预设选择器里选中它，该会话即按协议工作 |
+| 🟢 **DSH 预设** | DeepSeek Harness（含 DSH 桌面端 / Web GUI） | `%USERPROFILE%\.dsh\.agent-presets\aipj-1\` | 新增一个预设，在预设选择器里选中它，该会话即按协议工作 |
 | 🔵 **Codex 注入** | OpenAI Codex 桌面端 / CLI | `%USERPROFILE%\.codex\AGENTS.md` | Codex 的官方全局指令文件，全时生效 |
+
+> ⚠️ **目录名有硬规则（很多人栽在这）**：DSH 源码里
+> `packages/preset/agent-presets/src/preset.ts` 定义 `PRESET_ID = /^[a-z0-9][a-z0-9-]*$/`，
+> 扫描 `~/.dsh/.agent-presets` 时名字不合规的目录**直接跳过、没有任何报错**。
+> 所以落地目录必须叫 **`aipj-1`**——不能叫 `aipj-1.0`（带小数点 = 装了等于没装）、
+> 也不能有大写/下划线/空格/中文。仓库里的源目录 `DSH\aipj-1.0\` 是原包原名（归档用，不改），
+> 安装脚本复制过去时会自动改名成 `aipj-1`。
+> 跑 `install.ps1 -Action check` 会顺手扫描你的预设目录，把不合规的名字列出来。
 
 ---
 
@@ -45,11 +53,14 @@ dsh-pj-pack/
 ├── README.md                       ← 本文件
 │
 ├── DSH/
-│   └── aipj-1.0/                   ← 🟢 DSH 预设三件套（复制这一整个文件夹过去）
+│   └── aipj-1.0/                   ← 🟢 DSH 预设三件套（原包原目录名，刻意不改以保真）
 │       ├── persona.md              ← 协议本体（破甲载荷）
 │       ├── preset.yml              ← 预设清单（名字/描述/排序/版本）
 │       ├── agent.cordis.yml        ← 组件装配（只引用 DSH 官方内置组件）
-│       └── 使用说明.md             ← 原包自带说明
+│       └── 使用说明.md             ← 原包自带说明（顶部已加"改名"修正注）
+│         ⚠ 安装到 ~/.dsh/.agent-presets/ 时必须叫 aipj-1：
+│           DSH 的 PRESET_ID = /^[a-z0-9][a-z0-9-]*$/ 不接受小数点，
+│           不合规的名字会被静默忽略 → install.ps1 会自动改名
 │
 ├── CODEX/
 │   ├── ai-pj-v1.0-codex.md         ← 🔵 Codex 注入载荷
@@ -123,13 +134,15 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action install -Target c
 **方式 C · 全手动（不用任何脚本，最透明的做法）**
 
 1. 打开 `%USERPROFILE%\.dsh\.agent-presets\`（在资源管理器地址栏输入这个路径回车；没有 `.dsh\.agent-presets` 就自己建）
-2. 把 `dsh-pj-pack\DSH\aipj-1.0` **整个文件夹**复制进去
-   → 最终路径应该是 `C:\Users\你的用户名\.dsh\.agent-presets\aipj-1.0\persona.md`
+2. 把 `dsh-pj-pack\DSH\aipj-1.0` **整个文件夹**复制进去，**粘贴后把文件夹改名为 `aipj-1`**
+   → 最终路径必须是 `C:\Users\你的用户名\.dsh\.agent-presets\aipj-1\persona.md`
+   → 名字里**不能**有小数点/大写/下划线/空格/中文，否则 DSH 扫描时直接跳过（无报错，选择器里就是不出现）
 3. Codex 通道同理：把 `CODEX\ai-pj-v1.0-codex.md` 复制到 `%USERPROFILE%\.codex\`，改名为 `AGENTS.md`
 
-> ⚠️ 最常见的翻车点：把**整个仓库文件夹**（里面带 README.md、extra 等）丢进 `.agent-presets`。
-> 预设目录里只应该有一个个**预设文件夹**，每个文件夹里直接躺着 `persona.md` / `preset.yml` / `agent.cordis.yml`。
-> `install.ps1 -Action check` 会检测出这种情况并提醒你。
+> ⚠️ 两个最常见的翻车点：
+> ① 把**整个仓库文件夹**（里面带 README.md、extra 等）丢进 `.agent-presets`——预设目录里只应该有一个个**预设文件夹**，每个文件夹里直接躺着 `persona.md` / `preset.yml` / `agent.cordis.yml`；
+> ② 目录名直接沿用 `aipj-1.0`——带小数点违反 `PRESET_ID`，必须改成 `aipj-1`。
+> 这两条 `install.ps1 -Action check` 都会检测并提醒。
 
 ### 第 3 步：完全重启客户端 → 新建会话 → 验证
 
@@ -154,7 +167,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action check
 再加上文件层面的硬核对（把算出来的哈希和 `SHA256SUMS.txt` 对一下即可）：
 
 ```powershell
-Get-FileHash "$env:USERPROFILE\.dsh\.agent-presets\aipj-1.0\persona.md" -Algorithm SHA256
+Get-FileHash "$env:USERPROFILE\.dsh\.agent-presets\aipj-1\persona.md" -Algorithm SHA256
 # 期望: 15582C7507BA1268F7613C407855F02E8194FABBF2A4E1F988655AEE27D1EEA4
 ```
 
@@ -169,7 +182,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action uninstall
 # 也可以双击 双击卸载.bat
 ```
 
-- 覆盖前自动备份：`%USERPROFILE%\.codex\AGENTS.md.bak-pj-<时间戳>`、`...\.dsh\.agent-presets\aipj-1.0.bak-<时间戳>`
+- 覆盖前自动备份：`%USERPROFILE%\.codex\AGENTS.md.bak-pj-<时间戳>`、`...\.dsh\.agent-presets\aipj-1.bak-<时间戳>`
 - 卸载后再重启客户端即彻底回到安装前状态。
 
 ---
@@ -187,7 +200,8 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action uninstall
    ```
 
 2. `persona.md` 里就是那份"核心工作协议"：身份层 → 业务域直通 → 输出锁定 → 拒绝覆盖 → 界外保留。
-3. DSH 启动时扫描 `~/.dsh/.agent-presets/`，把每个子目录登记成一个可选预设；选中它，这段文本就进了系统提示词，**每轮都生效**。
+3. DSH 启动时扫描 `~/.dsh/.agent-presets/`，把每个**名字合法**的子目录登记成一个可选预设；选中它，这段文本就进了系统提示词，**每轮都生效**。
+   （合法 = 匹配 `/^[a-z0-9][a-z0-9-]*$/`；不匹配的目录被 `discovery.ts` 的 `continue` 静默跳过——这就是"装了没反应"的头号原因。）
 4. `agent.cordis.yml` 只引用官方内置组件（`@deepseek-ai/dsh-*`），**不含任何第三方代码、不修改 DSH 本体**。不想要了删目录即可。
 
 ---
@@ -195,7 +209,12 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action uninstall
 ## 常见问题
 
 **装了没生效？**
-① 是不是只关了窗口没退进程；② 新会话的预设选择器里有没有真的选中「AI-PJ v1.0」；③ `hi` 是不是整条消息。
+① 是不是只关了窗口没退进程；② 新会话的预设选择器里有没有真的选中「AI-PJ v1.0」；③ `hi` 是不是整条消息；④ **目录名是不是 `aipj-1`**（带小数点/大写/下划线/空格/中文的名字会被 DSH 静默忽略——这是最常见的坑）。
+
+**目录名到底什么规则？**
+DSH 只认 `/^[a-z0-9][a-z0-9-]*$/`：小写字母、数字、连字符，首字符必须是字母或数字。
+`aipj-1` ✅ ｜ `aipj-1.0` ❌（小数点）｜ `AI-PJ` ❌（大写）｜ `aipj_1` ❌（下划线）｜ `破甲包` ❌（中文）。
+不合规不会报错，只是"不存在"。`install.ps1 -Action check` 会把不合规的目录一并列出来。
 
 **`hi` 回了正常回答，没有标记行？**
 说明该会话用的不是本预设（换会话重选），或文件没放对层级（跑 `-Action check` 看）。

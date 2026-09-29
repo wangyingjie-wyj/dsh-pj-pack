@@ -6,8 +6,9 @@
         让 AI 在启动时把破甲协议读进系统提示词。
 
   两种通道:
-    dsh    复制 DSH\aipj-1.0\ → %USERPROFILE%\.dsh\.agent-presets\aipj-1.0\
+    dsh    复制 DSH\aipj-1.0\ → %USERPROFILE%\.dsh\.agent-presets\aipj-1\
            （DeepSeek Harness 在启动时扫描该目录；装完必须重启 DSH 进程）
+           ⚠ 落地目录名必须是 aipj-1（不能是 aipj-1.0）——见下方 PRESET_ID 说明
     codex  复制 CODEX\ai-pj-v1.0-codex.md → %USERPROFILE%\.codex\AGENTS.md
            （Codex 官方全局指令文件；改前自动备份）
 
@@ -34,16 +35,28 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root       = $PSScriptRoot
 $Stamp      = Get-Date -Format 'yyyyMMdd-HHmmss'
-$PresetName = 'aipj-1.0'
 $Marker     = 'AP-PROTOCOL'
 
+# ── 预设 id 硬规则（这一条最容易翻车）──────────────────────────────────
+# DSH 源码 packages/preset/agent-presets/src/preset.ts:
+#     export const PRESET_ID = /^[a-z0-9][a-z0-9-]*$/
+# discovery.ts 扫描 ~/.dsh/.agent-presets 时:
+#     if (!child.isDirectory() || !PRESET_ID.test(child.name)) continue
+# 含义：目录名只能是小写字母/数字/连字符，且必须以字母或数字开头。
+#      不合规的目录会被**静默跳过**，预设选择器里根本不出现（没有任何报错）。
+#      所以 `aipj-1.0` 这种带小数点的名字 = 装了等于没装。
+# 本脚本的处理：源目录保持原包原名 aipj-1.0（归档保真），落地时改名 aipj-1。
+$PresetId     = 'aipj-1'      # 落地目录名（必须匹配 PRESET_ID）
+$SrcDirName   = 'aipj-1.0'    # 仓库里的源目录名（原包原名，不改）
+$PresetIdRule = '^[a-z0-9][a-z0-9-]*$'
+
 # ---- 载荷位置（仓库内） ----
-$PresetSrc  = Join-Path $Root "DSH\$PresetName"
+$PresetSrc  = Join-Path $Root "DSH\$SrcDirName"
 $CodexSrc   = Join-Path $Root 'CODEX\ai-pj-v1.0-codex.md'
 
 # ---- 安装目标 ----
 $PresetsDir = Join-Path $env:USERPROFILE '.dsh\.agent-presets'
-$PresetDst  = Join-Path $PresetsDir $PresetName
+$PresetDst  = Join-Path $PresetsDir $PresetId
 $CodexDir   = Join-Path $env:USERPROFILE '.codex'
 $CodexDst   = Join-Path $CodexDir 'AGENTS.md'
 
@@ -53,13 +66,13 @@ function Wr($m)   { Write-Host "    [!]  $m" -ForegroundColor Yellow }
 function Bad($m)  { Write-Host "    [X]  $m" -ForegroundColor Red }
 
 function Get-PresetDisplayName {
-  if (-not (Test-Path -LiteralPath $PresetSrc)) { return $PresetName }
+  if (-not (Test-Path -LiteralPath $PresetSrc)) { return $PresetId }
   $yml = Join-Path $PresetSrc 'preset.yml'
   if (Test-Path -LiteralPath $yml) {
     $m = [regex]::Match((Get-Content -LiteralPath $yml -Raw -Encoding UTF8), '(?m)^\s*name\s*:\s*(.+)$')
     if ($m.Success) { return $m.Groups[1].Value.Trim() }
   }
-  return $PresetName
+  return $PresetId
 }
 
 function Get-DshState {
@@ -84,7 +97,7 @@ function Show-Status {
   Write-Host '  破甲包状态检查' -ForegroundColor Cyan
   Write-Host '============================================================' -ForegroundColor Cyan
   Write-Host ("  仓库根目录    : {0}" -f $Root)
-  Write-Host ("  DSH 预设名    : {0}" -f (Get-PresetDisplayName))
+  Write-Host ("  DSH 预设名    : {0}  (目录 id: {1})" -f (Get-PresetDisplayName), $PresetId)
 
   $dshSrcOk = (Test-Path -LiteralPath (Join-Path $PresetSrc 'persona.md'))
   Write-Host ("  [dsh] 载荷    : {0} {1}" -f $PresetSrc, $(if ($dshSrcOk) { '(存在)' } else { '(缺失!)' }))
@@ -113,7 +126,18 @@ function Show-Status {
       Write-Host ''
       Wr '发现疑似「整包复制」的目录（预设目录里不该有 README.md / DSH 子目录）：'
       $suspicious | ForEach-Object { Write-Host ("      {0}" -f $_.FullName) -ForegroundColor Yellow }
-      Wr '正确做法：把仓库里的 DSH\aipj-1.0 这一个子目录复制过去（本脚本已自动做对）'
+      Wr ("正确做法：把仓库里的 DSH\{0} 这一个子目录复制过去，并改名 {1}（本脚本已自动做对）" -f $SrcDirName, $PresetId)
+    }
+
+    # 预设 id 合规扫描：不合规的目录会被 DSH 静默忽略（看不到任何报错）
+    $invalid = @(Get-ChildItem -LiteralPath $PresetsDir -Directory -ErrorAction SilentlyContinue |
+      Where-Object { -not ($_.Name -match $PresetIdRule) -and ($_.Name -notlike '*.bak-*') -and ($_.Name -notlike '*.tmpfix') -and ($_.Name -notlike '*.disabled') })
+    if ($invalid.Count -gt 0) {
+      Write-Host ''
+      Wr '以下预设目录名不符合 DSH 的预设 id 规则，会被【静默忽略】（选择器里看不到）：'
+      $invalid | ForEach-Object { Write-Host ("      {0}   (含 . _ 大写 空格 中文 等)" -f $_.FullName) -ForegroundColor Yellow }
+      Wr ("规则: {0}  —— 只允许小写字母/数字/连字符，且以字母或数字开头（数字开头可以，如 1abc）" -f $PresetIdRule)
+      Wr ("处理: 把目录改名成合规形式（例如 aipj-1.0 → {0}），然后重启 DSH" -f $PresetId)
     }
   }
 
@@ -164,6 +188,7 @@ function Install-Dsh {
   }
   Wr "必须【完全退出 DSH 进程再重开】（关窗口不算），否则预设不会被扫描到"
   Wr ("重启后：新建会话 → 预设选择器选「{0}」→ 发 hi 验证" -f (Get-PresetDisplayName))
+  Wr ("目录 id 必须是 {0}：DSH 规则 PRESET_ID = {1}，带小数点/大写/下划线的名字会被静默忽略" -f $PresetId, $PresetIdRule)
 }
 
 function Uninstall-Dsh {
@@ -174,7 +199,7 @@ function Uninstall-Dsh {
   if ($DryRun) { Write-Host "    [dry-run] 删除 $PresetDst"; return }
   Remove-Item -LiteralPath $PresetDst -Recurse -Force
   Ok "已删除: $PresetDst"
-  $baks = @(Get-ChildItem -LiteralPath $PresetsDir -Filter "$PresetName.bak-*" -Directory -ErrorAction SilentlyContinue)
+  $baks = @(Get-ChildItem -LiteralPath $PresetsDir -Filter "$PresetId.bak-*" -Directory -ErrorAction SilentlyContinue)
   if ($baks.Count -gt 0) { Wr ("如要还原安装前的预设，可用备份: " + ($baks[-1].FullName)) }
   Wr '重启 DSH 后该预设从选择器消失'
 }
