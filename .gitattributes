@@ -1,0 +1,30 @@
+# ----------------------------
+# 归一化换行与文本判定
+# ----------------------------
+* text=auto eol=lf
+
+# Windows 批处理必须是 CRLF（否则 cmd 解析异常）
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell：脚本用 CRLF 更稳（PS 5.1 对 LF 也能跑，但统一更省事）
+*.ps1 text eol=crlf
+
+# 文本载荷
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# ----------------------------
+# 二进制：不要做换行/文本处理
+# ----------------------------
+*.rar  binary
+*.exe  binary
+*.part[0-9][0-9][0-9] binary
+
+# ----------------------------
+# GitHub 语言统计：把仓库标成"脚本/文档"项目
+# ----------------------------
+*.md   linguist-documentation
+extra/ linguist-vendored
+packages/ linguist-vendored

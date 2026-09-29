@@ -1,0 +1,17 @@
+# ---- 合并出来的客户端安装包（单文件 228MB，禁止提交）----
+/extra/*.exe
+/extra/*.zip
+
+# ---- 运行时产生的备份 ----
+*.bak-*
+*.bak-pj-*
+
+# ---- 系统垃圾 ----
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- 编辑器 ----
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,3 @@
+﻿# DeepSeek Harness 客户端安装包 分卷合并校验清单
+# 合并命令: powershell -ExecutionPolicy Bypass -File .\install.ps1 -Action join
+21CAFEBAFCCF0FCF20F72BDD800267DDB71E2B106754BFE7A507B2FB439F0B73 *DSH-Setup-Latest.exe
